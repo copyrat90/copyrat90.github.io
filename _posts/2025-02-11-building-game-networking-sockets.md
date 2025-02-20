@@ -3,7 +3,7 @@ layout: post
 title: GameNetworkingSockets 빌드하기
 tags: [GameNetworkingSockets]
 author: copyrat90
-last_modified_at: 2025-02-11T21:27:00+09:00
+last_modified_at: 2025-02-20T13:06:00+09:00
 ---
 
 `BUILDING.md` 읽고 그대로 따라하면 될 줄 알았는데... 이상한 오류가 나서 한참 헤맸다.
@@ -31,11 +31,10 @@ TCP처럼 connection 기반으로 돌아가나, message 단위로 자르는 작�
 * 반드시 64비트 버전의 Visual C++ 컴파일러를 사용하도록 하기 (`cl.exe`)
     * `Developer PowerShell for VS 2022`를 썼는데, 여기 `cl.exe`는 x86 컴파일러가 사용됨
         * 임시적인 해결책
-            1. 위 `Developer Powershell for VS 2022` 바로 가기 링크를 확인해, `Enter-VsDevShell` 뒤에 있는 hex문자 6글자를 기억 (e.g. `f174b73f`)
             1. 일반 Powershell을 실행
-            1. 아래 명령을 실행하되, 위에서 기억한 hex문자 6글자로 대체해서 실행
+            1. 아래 명령을 실행 (Visual Studio 버전 및 설치 위치에 따라 적절히 변경할 것)
                 ```ps
-                &{Import-Module "C:/Program Files/Microsoft Visual Studio/2022/Community/Common7/Tools/Microsoft.VisualStudio.DevShell.dll"; Enter-VsDevShell f174b73f -SkipAutomaticLocation -DevCmdArguments "-arch=x64 -host_arch=x64"}
+                &{Import-Module "C:/Program Files/Microsoft Visual Studio/2022/Community/Common7/Tools/Microsoft.VisualStudio.DevShell.dll"; Enter-VsDevShell -VsInstallPath "C:/Program Files/Microsoft Visual Studio/2022/Community" -SkipAutomaticLocation -DevCmdArguments "-arch=x64 -host_arch=x64"}
                 ```
                 * 안타깝게도, 이 명령을 그냥 `Developer Powershell for VS 2022` 바로가기 링크에 넣을 수가 없음. 명령이 너무 길어서 잘림...
             1. 이제 64비트 컴파일러가 제대로 잡힘.
@@ -47,7 +46,7 @@ TCP처럼 connection 기반으로 돌아가나, message 단위로 자르는 작�
                     "args": [
                         "-noe",
                         "-c",
-                        "&{Import-Module \"C:/Program Files/Microsoft Visual Studio/2022/Community/Common7/Tools/Microsoft.VisualStudio.DevShell.dll\"; Enter-VsDevShell f174b73f -SkipAutomaticLocation -DevCmdArguments \"-arch=x64 -host_arch=x64\"}"
+                        "&{Import-Module \"C:/Program Files/Microsoft Visual Studio/2022/Community/Common7/Tools/Microsoft.VisualStudio.DevShell.dll\"; Enter-VsDevShell -VsInstallPath \"C:/Program Files/Microsoft Visual Studio/2022/Community\" -SkipAutomaticLocation -DevCmdArguments \"-arch=x64 -host_arch=x64\"}"
                     ],
                     "source": "PowerShell",
                     "icon": "terminal-powershell"
