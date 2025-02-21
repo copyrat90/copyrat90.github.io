@@ -3,18 +3,18 @@ layout: post
 title: GameNetworkingSockets 빌드하기
 tags: [GameNetworkingSockets]
 author: copyrat90
-last_modified_at: 2025-02-20T13:06:00+09:00
+last_modified_at: 2025-02-21T13:56:00+09:00
 ---
 
 `BUILDING.md` 읽고 그대로 따라하면 될 줄 알았는데... 이상한 오류가 나서 한참 헤맸다.
 
-# GameNetworkingSockets?
+# GameNetworkingSockets
 
 [Valve](https://www.valvesoftware.com/en)에서 오픈소스로 공개한 UDP 소켓을 게임용으로 추상화한 라이브러리.
 
 [GitHub: ValveSoftware/GameNetworkingSockets](https://github.com/ValveSoftware/GameNetworkingSockets)
 
-TCP처럼 connection 기반으로 돌아가나, message 단위로 자르는 작업을 알아서 해 준다.\
+TCP처럼 Connection 기반으로 돌아가나, 내부 소켓은 UDP를 사용하고, message 단위로 자르는 작업을 알아서 해 준다.\
 그리고 Reliable과 Unreliable한 메시지 둘 다 보낼 수 있다.
 
 # 빌드 문제
