@@ -3,16 +3,16 @@ layout: post
 title: C# Interop 중 nullptr인 `ref`, `out` 처리
 tags: [C#]
 author: copyrat90
-last_modified_at: 2025-02-17T18:11:00+09:00
+last_modified_at: 2025-02-21T13:50:00+09:00
 ---
 
 P/Invoke할 native 함수의 매개변수로 pointer가 있는데, 그게 nullptr이 가능하다면?
 
-한 줄 요약: 넘길 때는 `Unsafe.NullRef<T>`, 반환받을 때는 `Unsafe.IsNullRef<T>`로 nullptr인지 체크.
+한 줄 요약: 넘길 때는 `Unsafe.NullRef<T>()`, 반환받을 때는 `Unsafe.IsNullRef<T>()`로 nullptr인지 체크.
 
 # 배경
 
-[GameNetworkingSockets](https://github.com/ValveSoftware/GameNetworkingSockets)을 [C#에서 P/Invoke로 감싸는 라이브러리를 fork](https://github.com/copyrat90/ValveSockets-CSharp)해서 수정하고 있다.
+[GameNetworkingSockets](https://github.com/ValveSoftware/GameNetworkingSockets)을 [C#에서 P/Invoke로 감싸는 라이브러리를 fork](https://github.com/copyrat90/Valve.Sockets.Regen)해서 수정하고 있다.
 
 # 설명
 
@@ -26,7 +26,7 @@ HSteamListenSocket CreateListenSocketIP( const SteamNetworkingIPAddr &localAddre
 이걸 C# 쪽에서는 이런 식으로 LibraryImport 처리할 수 있다.
 ```cs
 [LibraryImport("GameNetworkingSockets")]
-[UnmanagedCallConv(CallConvs=new [] { typeof(CallConvCdecl) })]
+[UnmanagedCallConv(CallConvs = new [] { typeof(CallConvCdecl) })]
 public static partial uint SteamAPI_ISteamNetworkingSockets_CreateListenSocketIP(IntPtr self, in SteamNetworkingIPAddr localAddress, int nOptions, ReadOnlySpan<SteamNetworkingConfigValue> pOptions);
 ```
 
@@ -74,8 +74,8 @@ int ReceiveMessagesOnPollGroup( HSteamNetPollGroup hPollGroup, SteamNetworkingMe
 (이 라이브러리에 국한된 얘기지만, 어차피 이 함수로 받은 메시지는 [`SteamNetworkingMessage_t::Release()` 호출해서 지워야해서](https://partner.steamgames.com/doc/api/ISteamNetworkingSockets#ReceiveMessagesOnConnection) `IntPtr`을 들고 있긴 해야한다. )
 ```cs
 [LibraryImport("GameNetworkingSockets")]
-[UnmanagedCallConv(CallConvs=new [] { typeof(CallConvCdecl) })]
-public static partial int SteamAPI_ISteamNetworkingSockets_ReceiveMessagesOnPollGroup(IntPtr self,uint hPollGroup,Span<IntPtr> ppOutMessages,int nMaxMessages);
+[UnmanagedCallConv(CallConvs = new [] { typeof(CallConvCdecl) })]
+public static partial int SteamAPI_ISteamNetworkingSockets_ReceiveMessagesOnPollGroup(IntPtr self, uint hPollGroup, Span<IntPtr> ppOutMessages, int nMaxMessages);
 ```
 
 참고로, 변환 시에 [`Marshal.PtrToStructure<T>`](https://learn.microsoft.com/en-us/dotnet/api/system.runtime.interopservices.marshal.ptrtostructure?view=net-9.0)는 managed object로 복사를 하므로,\
