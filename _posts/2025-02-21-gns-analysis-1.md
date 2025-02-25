@@ -3,10 +3,10 @@ layout: post
 title: GameNetworkingSockets 분석 (1) - Connection queue & PollGroup queue
 tags: [C#]
 author: copyrat90
-last_modified_at: 2025-02-21T15:25:00+09:00
+last_modified_at: 2025-02-25T15:18:00+09:00
 ---
 
-[ValveSoftware/GameNetworkingSockets](https://github.com/ValveSoftware/GameNetworkingSockets) 소스 코드 분석 제 1편.
+[ValveSoftware/GameNetworkingSockets](https://github.com/ValveSoftware/GameNetworkingSockets) 분석 제 1편.
 
 # GameNetworkingSockets
 

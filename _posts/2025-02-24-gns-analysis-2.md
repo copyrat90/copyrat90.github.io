@@ -3,10 +3,10 @@ layout: post
 title: GameNetworkingSockets 분석 (2) - 메시지 동적 할당
 tags: [C#]
 author: copyrat90
-last_modified_at: 2025-02-24T23:30:00+09:00
+last_modified_at: 2025-02-25T15:18:00+09:00
 ---
 
-[ValveSoftware/GameNetworkingSockets](https://github.com/ValveSoftware/GameNetworkingSockets) 소스 코드 분석 제 2편.
+[ValveSoftware/GameNetworkingSockets](https://github.com/ValveSoftware/GameNetworkingSockets) 분석 제 2편.
 
 한 줄 요약: 기본적으로 메시지는 동적 할당되고, pooling 하려면 따로 함수 포인터를 등록해야 한다.
 
