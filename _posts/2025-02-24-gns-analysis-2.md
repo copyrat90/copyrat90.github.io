@@ -3,7 +3,7 @@ layout: post
 title: GameNetworkingSockets 분석 (2) - 메시지 동적 할당
 tags: [C#]
 author: copyrat90
-last_modified_at: 2025-02-25T15:18:00+09:00
+last_modified_at: 2025-02-26T14:09:00+09:00
 ---
 
 [ValveSoftware/GameNetworkingSockets](https://github.com/ValveSoftware/GameNetworkingSockets) 분석 제 2편.
@@ -63,7 +63,8 @@ void CSteamNetworkingMessage::DefaultFreeData( SteamNetworkingMessage_t *pMsg ) 
 `DefaultFreeData()`는 그냥 `free()`다. 글자 그대로 해제만을 전담.
 
 반대로, 매개변수로 받은 `cbSize`가 `0`이었으면, 공간을 할당하지 않고, `m_pfnFreeData`가 `nullptr`로 세팅된다.\
-이걸 이용해 pooling 하겠다면, `m_pfnFreeData`에 payload 공간을 반환하는 함수를 넣으면 될 것이다.
+이걸 이용해 pooling 하겠다면, `m_pfnFreeData`에 payload 공간을 반환하는 함수를 넣으면 될 것이다.\
+(당연히 `m_pData`와 `m_cbSize`도 직접 설정해야겠고.)
 
 ```cpp
     // Clear identity
