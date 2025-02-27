@@ -3,7 +3,7 @@ layout: post
 title: GameNetworkingSockets 분석 (2) - 메시지 동적 할당
 tags: [C#]
 author: copyrat90
-last_modified_at: 2025-02-26T14:09:00+09:00
+last_modified_at: 2025-02-27T21:02:00+09:00
 ---
 
 [ValveSoftware/GameNetworkingSockets](https://github.com/ValveSoftware/GameNetworkingSockets) 분석 제 2편.
@@ -118,14 +118,148 @@ void CSteamNetworkingMessage::ReleaseFunc( SteamNetworkingMessage_t *pIMsg ) {
 ...`delete`로 해제한다.
 
 이 메시지 자체의 동적 할당까지 피하고 싶다면, API 권장사항인 `AllocateMessage()` 호출을 피해야 한다.\
-그리고 거의 같은 기능을 하지만, pool에서 할당받는 것으로 대체한 버전의 `MyAllocateMessage()`라던가 만들고,\
+그리고 거의 같은 기능을 하지만, pool에서 할당받는 것으로 대체한 버전의 `my_allocate_message()`라던가 만들고,\
 `m_pfnRelease`도 `ReleaseFunc()` 유사하지만 pool에 반환하는 `MyReleaseFunc()`로 바꿔야 할 것이다.
 
-# C#에서의 pooling 처리
+# Pooling 처리
+
+## 고민 1
 
 C# P/Invoke를 쓰는 입장에서, 이 할당/해제 함수들을 C# 측에서 `Marshal.GetFunctionPointerForDelegate()`로 세팅한다면?\
-메시지 하나 할당 및 해제할 때마다 managed -> unmanaged -> managed 를 왔다갔다 해야한다.\
+메시지 하나 할당 및 해제할 때마다 managed -> unmanaged -> managed 를 왔다갔다 해야한다.
+
 이는 성능 문제를 야기할 것으로 보이므로, C++ 측에서 pooling 처리하는 함수를 만들고,\
 C# 측에서는 내가 만든 함수를 P/Invoke로 호출하도록 짜야 할 것이다.
+
+## 고민 2
+
+다시 생각해보니, 어차피 managed -> unmanaged 로 payload 복사를 피하기 위해서는 [`SendMessages()`](https://partner.steamgames.com/doc/api/ISteamNetworkingSockets#SendMessages)를 쓸 수 밖에 없고,\
+그러려면 [`AllocateMessage()`](https://partner.steamgames.com/doc/api/ISteamNetworkingUtils#AllocateMessage)든 직접 만든 `my_allocate_message()`든 호출해서 unmanaged `CSteamNetworkingMessage`를 매번 받아야 한다.\
+결국 C++ 측에서 pooling 하도록 처리해도, 메시지 하나 할당할 때마다 managed -> unmanaged 쪽으로 P/Invoke 호출이 필요하다는 말이다.
+
+그러면 차라리 C# 쪽에서 unmanaged 메모리를 pooling하도록 처리하고, 해제 함수만 `Marshal.GetFunctionPointerForDelegate()`로 하면 어떨까?\
+이러면 할당 대신, 메시지 하나 해제할 때마다 unmanaged -> managed 쪽으로 콜백이 일어날 것이다.
+
+뭐가 더 나을진 모르겠으나, 어쨌든 1회의 switching이니까 아주 큰 차이는 없을 것으로 보인다.\
+그리고 C++ 코드 추가해서 DLL을 추가로 불러오는 건 여간 귀찮은 게 아니니... C# 쪽에서 unmanaged 메모리를 pooling할까?
+
+## Shared Payload
+
+같은 payload를 여러 메시지가 공유하는 경우가 많을 것이다.\
+(특정 캐릭터가 주변 캐릭터 모두에게 이동 메시지를 보내는 등)\
+이걸 payload는 1번만 할당하고, 여러 메시지가 그 payload를 공유하도록 하면 좋을 것이다.
+
+이러려면, `m_pfnFreeData`에서 payload가 가리키는 메모리를 바로 해제시키는 게 아니라,\
+그 payload의 reference count를 둬서 그걸 감소시키고 0이 되면 반환하도록 처리해야한다.
+
+문제는 `m_pData`는 전송할 payload 데이터만 포함하고 있어야 하니, reference count를 저장할 공간을 어떻게 두냐는 건데...\
+그냥 앞 4바이트에 ref count를 두고, `m_pData`에는 실제 전송할 payload인 뒤 4바이트부터의 `IntPtr`을 저장해놓으면 된다.\
+ref count의 alignment를 맞추면서 할당하려면, [`NativeMemory.AlignedAlloc()`](https://learn.microsoft.com/en-us/dotnet/api/system.runtime.interopservices.nativememory.alignedalloc?view=net-8.0#system-runtime-interopservices-nativememory-alignedalloc(system-uintptr-system-uintptr))을 쓰면 되겠다.
+
+## 고민 3
+
+하지만 payload 앞에 붙은 ref count를 C#에서 [`Interlocked.Increment()`](https://learn.microsoft.com/en-us/dotnet/api/system.threading.interlocked.increment?view=net-9.0#system-threading-interlocked-increment(system-int32@))할 수가 없다... unmanaged 메모리라 `ref int`가 안 된다.\
+다시 C++ 코드를 추가하는 방향으로 회귀해서 생각해보자...
+
+결국 위에서 말한 걸 하려면 C++ 측에서 아래 함수들을 제공해야 한다.
+1. `allocate_shared_payload()` : ref count를 앞에 숨겨놓은 payload의 pointer를 반환해주는 함수.
+1. `add_shared_payload_to_message()` : `CSteamNetworkingMessage`에 payload를 추가하는 함수. 여기서 `++ref_count`와 `m_pfnFreeData` 함수 포인터 세팅도 수행.
+1. `remove_shared_payload_from_message()` : `--ref_count`후 0이면 해제하는 함수. 이게 바로 `m_pfnFreeData`에 세팅될 함수.
+1. `force_deallocate_shared_payload()` : 만일 예외 상황이 터져서 메시지에 payload를 추가 못하거나, 전송 못하면, payload를 수동으로 해제해야 하는데, 그 때 쓰일 함수.
+
+그리고 이걸 P/Invoke로 호출할 수 있어야 하므로 `extern "C" __declspec(dllexport)`를 붙여 노출시키면 될 것이다.
+
+## Shared Payload 구현
+
+그리 길지 않으니 그냥 전체를 실어 놓는다.
+
+```cpp
+using ref_count_t = std::atomic_int32_t;
+
+/// @brief Allocates the shared payload with a hidden reference count.
+/// @param size Size to allocate space.
+/// @return Allocated space if it succeeded, otherwise `nullptr`.
+GNS_PRAC_INTERFACE void* gns_prac_allocate_shared_payload(std::int32_t size) {
+    if (size <= 0)
+        return nullptr;
+
+    // allocate space for (ref count + payload size)
+    void* ptr = GNS_PRAC_ALIGNED_ALLOC(alignof(ref_count_t), sizeof(ref_count_t) + size);
+    if (!ptr)
+        return nullptr;
+
+    // use the front space as a ref count
+    ref_count_t* ref_count = ::new (static_cast<void*>(ptr)) ref_count_t;
+    ;
+#if __cplusplus < 202002L // explicit zero init required before C++20
+    ref_count->store(0, std::memory_order_relaxed);
+#else
+    ((void)ref_count); // suppress unused variable warning
+#endif
+
+    // return the payload space (i.e. ref count is hidden)
+    return (std::byte*)ptr + sizeof(ref_count_t);
+}
+
+/// @brief Adds the shared payload to the message.
+///
+/// This increases the reference count of the payload.
+///
+/// You MUST use the shared payload allocated with `allocate_shared_payload()`, nothing else.
+/// @param msg Message to add the payload to.
+/// @param payload Payload to add to.
+/// @param size Size of the payload.
+GNS_PRAC_INTERFACE void gns_prac_add_shared_payload_to_message(SteamNetworkingMessage_t* msg, void* payload,
+                                                               std::int32_t size) {
+    // ref count should exist before the payload
+    ref_count_t* ref_count = reinterpret_cast<ref_count_t*>((std::byte*)payload - sizeof(ref_count_t));
+
+    // increase the ref count
+    ref_count->fetch_add(1, std::memory_order_relaxed);
+
+    // add the payload to the message
+    msg->m_pData = payload;
+    msg->m_cbSize = size;
+    msg->m_pfnFreeData = gns_prac_remove_shared_payload_from_message;
+}
+
+/// @brief Removes the shared payload from the message.
+///
+/// This decreases the reference count of the payload, and deallocates the payload if the ref count reaches zero.
+///
+/// This is a callback function which automatically set when you call `add_shared_payload_to_message()`,
+/// so you don't need to use this function directly.
+/// @param msg Message to remove the payload from.
+GNS_PRAC_INTERFACE void gns_prac_remove_shared_payload_from_message(SteamNetworkingMessage_t* msg) {
+    // ref count should exist before the payload
+    ref_count_t* ref_count = reinterpret_cast<ref_count_t*>((std::byte*)msg->m_pData - sizeof(ref_count_t));
+
+    // if this was the last shared reference
+    if (1 == ref_count->fetch_sub(1, std::memory_order_relaxed))
+    {
+        // destroy the ref count
+        ref_count->~ref_count_t();
+
+        // free the space (ref count is the alloc address)
+        GNS_PRAC_ALIGNED_FREE(ref_count);
+    }
+}
+
+/// @brief Force deallocate the shared payload.
+///
+/// This is only necessary if you have an exception in your program
+/// which prevents sending the message with already allocated shared payload.
+/// @param payload Payload to deallocate.
+GNS_PRAC_INTERFACE void gns_prac_force_deallocate_shared_payload(void* payload) {
+    // ref count should exist before the payload
+    ref_count_t* ref_count = reinterpret_cast<ref_count_t*>((std::byte*)payload - sizeof(ref_count_t));
+
+    // destroy the ref count
+    ref_count->~ref_count_t();
+
+    // free the space (ref count is the alloc address)
+    GNS_PRAC_ALIGNED_FREE(ref_count);
+}
+```
 
 *마지막 수정 : {{ page.last_modified_at }}*
