@@ -3,12 +3,14 @@ layout: post
 title: C# Interop 중 nullptr인 `ref`, `out` 처리
 tags: [C#]
 author: copyrat90
-last_modified_at: 2025-02-21T13:50:00+09:00
+last_modified_at: 2025-03-17T15:07:00+09:00
 ---
 
 P/Invoke할 native 함수의 매개변수로 pointer가 있는데, 그게 nullptr이 가능하다면?
 
-한 줄 요약: 넘길 때는 `Unsafe.NullRef<T>()`, 반환받을 때는 `Unsafe.IsNullRef<T>()`로 nullptr인지 체크.
+두 줄 요약:\
+넘길 때는 `Unsafe.NullRef<T>()`, 반환받을 때는 `Unsafe.IsNullRef<T>()`로 nullptr인지 체크.\
+다만, `out` 매개변수에는 쓸 수 없으니 주의할 것.
 
 # 배경
 
@@ -35,13 +37,11 @@ public static partial uint SteamAPI_ISteamNetworkingSockets_CreateListenSocketIP
 // 클래스 생략, 클래스에 unsafe가 붙어 있다.
 [System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.Interop.LibraryImportGenerator", "7.0.10.26716")]
 [System.Runtime.CompilerServices.SkipLocalsInitAttribute]
-public static partial uint SteamAPI_ISteamNetworkingSockets_CreateListenSocketIP(nint self, in global::Valve.Sockets.SteamNetworkingIPAddr localAddress, int nOptions, global::System.ReadOnlySpan<global::Valve.Sockets.SteamNetworkingConfigValue> pOptions)
-{
+public static partial uint SteamAPI_ISteamNetworkingSockets_CreateListenSocketIP(nint self, in global::Valve.Sockets.SteamNetworkingIPAddr localAddress, int nOptions, global::System.ReadOnlySpan<global::Valve.Sockets.SteamNetworkingConfigValue> pOptions) {
     uint __retVal;
     // Pin - Pin data in preparation for calling the P/Invoke.
     fixed (global::Valve.Sockets.SteamNetworkingIPAddr* __localAddress_native = &localAddress)
-    fixed (void* __pOptions_native = &global::System.Runtime.InteropServices.Marshalling.ReadOnlySpanMarshaller<global::Valve.Sockets.SteamNetworkingConfigValue, global::Valve.Sockets.SteamNetworkingConfigValue>.ManagedToUnmanagedIn.GetPinnableReference(pOptions))
-    {
+    fixed (void* __pOptions_native = &global::System.Runtime.InteropServices.Marshalling.ReadOnlySpanMarshaller<global::Valve.Sockets.SteamNetworkingConfigValue, global::Valve.Sockets.SteamNetworkingConfigValue>.ManagedToUnmanagedIn.GetPinnableReference(pOptions)) {
         __retVal = __PInvoke(self, __localAddress_native, nOptions, (global::Valve.Sockets.SteamNetworkingConfigValue*)__pOptions_native);
     }
 
@@ -55,10 +55,53 @@ public static partial uint SteamAPI_ISteamNetworkingSockets_CreateListenSocketIP
 알아서 전달한 값을 Native 쪽에서 볼 수 있는 pointer로 변환 및 pinning하여 전달해주고 있다.
 
 그런데 API에 따라서는 pointer 변수가 optional이라서, 상황에 따라 `nullptr`을 집어넣어야 할 수도 있다.\
-이걸 `in`, `ref`나 `out` keyword로 선언해버리면 Null reference를 어떻게 넣을까?\
+이걸 `in`, `ref` keyword로 선언해버리면 Null reference를 어떻게 넣을까?\
 답은 간단한데, [`Unsafe.NullRef<T>()`](https://learn.microsoft.com/en-us/dotnet/api/system.runtime.compilerservices.unsafe.nullref?view=net-9.0)를 쓰면 된다.
 
 또한, native 쪽에 원본이 있고 그게 `in`, `ref`로 콜백돼 넘어오는 경우라면, [`Unsafe.IsNullRef<T>()`](https://learn.microsoft.com/en-us/dotnet/api/system.runtime.compilerservices.unsafe.isnullref?view=net-9.0)로 체크할 수 있다.
+
+참고로, `out`에서는 이 방법을 쓸 수 없다.\
+이유는, LibraryImportGenerator가 생성한 코드에서 `out` 매개변수를 일단 `default`로 초기화하기 때문이다.
+```cs
+[global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.Interop.LibraryImportGenerator", "9.0.12.11113")]
+[global::System.Runtime.CompilerServices.SkipLocalsInitAttribute]
+public static partial void TestFunc(out int optionalNum) {
+    optionalNum = default;  /* BOOM!  NullReferenceException here */
+
+    // Pin - Pin data in preparation for calling the P/Invoke.
+    fixed (int* __optionalNum_native = &optionalNum) {
+        __PInvoke(__optionalNum_native);
+    }
+
+    // Local P/Invoke
+    [global::System.Runtime.InteropServices.DllImportAttribute("libMyNativeLibraryName", EntryPoint = "TestFunc", ExactSpelling = true)]
+    [global::System.Runtime.InteropServices.UnmanagedCallConvAttribute(CallConvs = new global::System.Type[] { typeof(global::System.Runtime.CompilerServices.CallConvCdecl) })]
+    static extern unsafe void __PInvoke(int* __optionalNum_native);
+}
+```
+
+위 `optionalNum`에 `out Unsafe.NullRef<T>`를 전달한다면, 첫 라인부터 바로 `System.NullReferenceException` 예외가 발생한다.\
+당장 [이걸 피할 방법은 없는 것으로 보이고](https://github.com/dotnet/csharplang/discussions/79), 아래와 같이 여러 버전의 함수를 제공하는 임시방편 해결책을 쓸 수 있다.
+```cs
+[LibraryImport(MyNativeLibraryName)]
+[UnmanagedCallConv(CallConvs = new[] { typeof(CallConvCdecl) })]
+public static partial void TestFunc(out int optionalNum);
+
+[LibraryImport(MyNativeLibraryName)]
+[UnmanagedCallConv(CallConvs = new[] { typeof(CallConvCdecl) })]
+public static partial void TestFunc(IntPtr optionalNum);
+
+public static void CallTestFunc(out int optionalNum) {
+    return TestFunc(out optionalNum);
+}
+
+public static void CallTestFunc() {
+    return TestFunc(IntPtr.Zero);
+}
+```
+
+문제는 Optional 매개변수가 $N$개 있으면 $2^N$개의 오버로드가 필요하다는 건데...\
+그 때는 다소 불편하지만 원소 1개짜리 `Span<T>`를 쓰는 방법이 있겠다.
 
 # 문제 상황
 
