@@ -3,7 +3,7 @@ layout: post
 title: 99%가 잘못 쓰는 placement new
 tags: [C++]
 author: copyrat90
-last_modified_at: 2025-01-11T12:00:00+09:00
+last_modified_at: 2025-03-17T14:54:00+09:00
 ---
 
 제목 어그로를 좀 끌어봤는데, 이만큼 직관적이면서 어그로 없는 제목이 안 떠오르는 걸 어쩌겠는가.\
@@ -96,6 +96,15 @@ void* operator new (std::size_t size, void* ptr);
 그 결과, 이걸 호출하는 placement new 또한 동적 할당을 하지 않고, *placement-arg* 로서 넣은 **`void*` 위치에다가 객체를 생성하게 된다.**
 
 ## 빠지기 쉬운 함정들
+
+### 0. `#include <new>` 빼먹기
+
+기초적인 실수이지만 생각치도 못할 수 있는 점.
+
+일반적인 상황에서 쓰는 [operator new 오버로드 (1번-4번)](https://en.cppreference.com/w/cpp/memory/new/operator_new)는 암시적으로 선언되지만,\
+여기서 다룰 다른 오버로드는 그렇지 않으므로 명시적 `#include <new>`가 필요하다.\
+
+그렇지 않다면 오버로드를 찾을 수 없다는 컴파일 오류를 보게 될 것이다.
 
 ### 1. 소멸자 호출을 빼먹기
 
@@ -273,7 +282,7 @@ int main() {
 결과는 다음과 같다.
 
 ```cpp
-Message: 
+Message:
 MyData()
 ~MyData()
 
