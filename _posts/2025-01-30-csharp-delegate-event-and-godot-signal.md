@@ -3,7 +3,7 @@ layout: post
 title: C#의 `delegate`와 `event`, 그리고 Godot의 Signal
 tags: [C#, Godot]
 author: copyrat90
-last_modified_at: 2025-02-03T16:04:00+09:00
+last_modified_at: 2025-03-23T13:04:00+09:00
 ---
 
 C#에서 Observer pattern을 구현하는 방법과, Godot에서 그걸 활용해 Signal handling하는 방법.
@@ -257,7 +257,7 @@ public partial class Main : Node
 Godot의 Signal을 받을 때는 [`Godot.SignalAwaiter`](https://haxegodot.github.io/godot/godot/SignalAwaiter.html)를 받는다.
 
 보통 C# await에서 `TaskAwaiter`를 받을 때는 장치 I/O를 대기하는 경우가 많은데,\
-그 경우 장치 I/O가 끝나면 (Windows 기준) [C# 런타임이 갖고 있는 IOCP 내 worker thread pool에서 I/O Completion Packet을 처리한다.](https://blog.stephencleary.com/2013/11/there-is-no-thread.html)\
+그 경우 장치 I/O가 끝나면 (.NET 7 이전 Windows 기준) [C# 런타임이 갖고 있는 IOCP 내 worker thread pool에서 I/O Completion Packet을 처리한다.](https://blog.stephencleary.com/2013/11/there-is-no-thread.html)\
 그 말은, `await` 이후에 재개하는 녀석은 IOCP의 worker thread라는 것으로, **I/O 요청을 건 thread와 재개하는 thread가 다를 수 있다는 말이다.**\
 (이걸 확인해보고 싶다면, `await Task.Delay(..)` 앞 뒤로 `CurrentThread.ManagedThreadId`를 출력해보라. 값이 다를 것이다.)\
 따라서, **상황에 따라 thread간 동기화가 필요할 수 있다.**
