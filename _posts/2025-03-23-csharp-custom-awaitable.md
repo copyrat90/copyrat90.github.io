@@ -3,7 +3,7 @@ layout: post
 title: (C#) async-await 패턴에 사용할 custom awaitable 작성하기
 tags: [C#]
 author: copyrat90
-last_modified_at: 2025-03-23T15:09:00+09:00
+last_modified_at: 2025-03-23T15:26:00+09:00
 ---
 
 C# 에서 async-await 패턴의 작동 방식과, 그를 이용한 custom awaitable 작성하기.
@@ -268,6 +268,71 @@ C++ 이었으면 template parameter pack으로 쉽게 처리했을 부분인데,
 원래는 그냥 lambda로 매개변수를 죄다 캡쳐했었는데, `Span<T>`는 그게 불가능해서 울며 겨자 먹기로 저 지저분한 overload 방식으로 선회했다. 답이 없나?
 
 질문글을 올리니 누가 [이걸 자동 생성하는 Source Generator](https://github.com/WhiteBlackGoose/InductiveVariadics) 방식을 해법으로 주는데, 그건 좀...
+
+## 사용 예시
+
+GnsSharp의 [`ISteamRemoteStorage`](https://github.com/nalchi-net/GnsSharp/blob/main/GnsSharp/ISteamRemoteStorage.cs)를 이용해 Steam Cloud에서 파일을 읽어오는 예시
+
+```cs
+async Task ReadSpacewarCloudFileAsync()
+{
+    string fileName = "message.dat";
+
+    // Assuming properly initialized, and running callback seperately
+    var storage = ISteamRemoteStorage.User!;
+
+    // Get the file size first.
+    int size = storage.GetFileSize(fileName);
+    if (size == 0)
+    {
+        Console.WriteLine($"File '{fileName}' doesn't exist");
+        return;
+    }
+
+    Console.WriteLine($"Size of '{fileName}' was {size}");
+
+    // Start reading file asynchronously.
+    CallTask<RemoteStorageFileReadAsyncComplete_t>? readTask
+        = storage.FileReadAsync(fileName, 0, (uint)size);
+
+    // Skip if failed to start reading file.
+    if (readTask == null)
+    {
+        Console.WriteLine("File read not initiated");
+        return;
+    }
+
+    // Await for reading to complete.
+    RemoteStorageFileReadAsyncComplete_t? complete = await readTask;
+
+    // Skip if reading failed.
+    if (!complete.HasValue)
+    {
+        Console.WriteLine("File read not complete");
+        return;
+    }
+    if (complete.Value.Result != EResult.OK)
+    {
+        Console.WriteLine($"File read not complete: {complete.Value.Result}");
+        return;
+    }
+
+    // Allocate buffer to copy the read bytes.
+    Span<byte> raw = stackalloc byte[(int)complete.Value.ReadSize];
+
+    // Copy the result to this buffer.
+    if (storage.FileReadAsyncComplete(complete.Value.FileReadAsync, raw))
+    {
+        // Assuming it's a UTF-8 string, print it.
+        string str = Encoding.UTF8.GetString(raw);
+        Console.WriteLine($"Read string: {str}");
+    }
+    else
+    {
+        Console.WriteLine("FileReadAsyncComplete() failed");
+    }
+}
+```
 
 # 참고 자료
 
