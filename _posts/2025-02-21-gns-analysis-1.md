@@ -1,7 +1,7 @@
 ---
 layout: post
 title: GameNetworkingSockets 분석 (1) - Connection queue & PollGroup queue
-tags: [C#]
+tags: [GameNetworkingSockets]
 author: copyrat90
 last_modified_at: 2025-02-25T15:18:00+09:00
 ---

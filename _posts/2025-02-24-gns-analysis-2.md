@@ -1,7 +1,7 @@
 ---
 layout: post
 title: GameNetworkingSockets 분석 (2) - 메시지 동적 할당
-tags: [C#]
+tags: [GameNetworkingSockets]
 author: copyrat90
 last_modified_at: 2025-02-27T21:02:00+09:00
 ---
