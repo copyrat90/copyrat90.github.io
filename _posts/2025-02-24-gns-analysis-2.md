@@ -3,7 +3,7 @@ layout: post
 title: GameNetworkingSockets 분석 (2) - 메시지 동적 할당
 tags: [GameNetworkingSockets]
 author: copyrat90
-last_modified_at: 2025-02-27T21:02:00+09:00
+last_modified_at: 2025-03-31T22:57:00+09:00
 ---
 
 [ValveSoftware/GameNetworkingSockets](https://github.com/ValveSoftware/GameNetworkingSockets) 분석 제 2편.
@@ -120,6 +120,16 @@ void CSteamNetworkingMessage::ReleaseFunc( SteamNetworkingMessage_t *pIMsg ) {
 이 메시지 자체의 동적 할당까지 피하고 싶다면, API 권장사항인 `AllocateMessage()` 호출을 피해야 한다.\
 그리고 거의 같은 기능을 하지만, pool에서 할당받는 것으로 대체한 버전의 `my_allocate_message()`라던가 만들고,\
 `m_pfnRelease`도 `ReleaseFunc()` 유사하지만 pool에 반환하는 `MyReleaseFunc()`로 바꿔야 할 것이다.
+
+수정: 이거 해보니까 불가능하다. 이유는 `CSteamNetworkingMessage`가 `SteamNetworkingMessage_t`를 상속받아,\
+`m_links`와 `m_linksSecondaryQueue`라는 private field를 추가하기 때문이다.
+```cpp
+pMsg->m_links.Clear();
+pMsg->m_linksSecondaryQueue.Clear();
+```
+이걸 내 함수에서 초기화 할 수가 없다.
+
+GameNetworkingSockets GitHub repo에 [Issue](https://github.com/ValveSoftware/GameNetworkingSockets/issues/369)로 올려놓음.
 
 # Pooling 처리
 
