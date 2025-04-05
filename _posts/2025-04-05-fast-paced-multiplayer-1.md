@@ -3,7 +3,7 @@ layout: post
 title: Fast-Paced Multiplayer (Part I) - Client-Server Game Architecture
 tags: [Netcode]
 author: Gabriel Gambetta
-last_modified_at: 2025-04-05T14:49:00+09:00
+last_modified_at: 2025-04-05T17:29:00+09:00
 ---
 
 본 포스트는 [Gabriel Gambetta의 *Fast-Paced Multiplayer (Part I): Client-Server Game Architecture*](https://www.gabrielgambetta.com/client-server-game-architecture.html)를 한국어로 번역한 것입니다.\
@@ -64,7 +64,7 @@ This post is a Korean translation of the [*Fast-Paced Multiplayer (Part I): Clie
 
 <figure style="background-color:#777777;padding:1em;border-radius:1em;display:table;text-align:center;margin:auto">
 <img src="https://www.gabrielgambetta.com/img/fpm1-01.png" style="background-color:#777777"/>
-<figcaption aria-hidden="true">단순한 클라이언트-서버 상호작용.</figcaption>
+<figcaption aria-hidden="true"><i>단순한 클라이언트-서버 상호작용.</i></figcaption>
 </figure>
 
 요약하면, 게임 상태는 서버만이 유일하게 관리한다.

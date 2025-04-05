@@ -3,7 +3,7 @@ layout: post
 title: Fast-Paced Multiplayer (Part II) - Client-Side Prediction and Server Reconciliation
 tags: [Netcode]
 author: Gabriel Gambetta
-last_modified_at: 2025-04-05T17:03:00+09:00
+last_modified_at: 2025-04-05T18:29:00+09:00
 ---
 
 본 포스트는 [Gabriel Gambetta의 *Fast-Paced Multiplayer (Part II): Client-Side Prediction and Server Reconciliation*](https://www.gabrielgambetta.com/client-side-prediction-server-reconciliation.html)를 한국어로 번역한 것입니다.\
@@ -27,7 +27,7 @@ This post is a Korean translation of the [*Fast-Paced Multiplayer (Part II): Cli
 
 <figure style="background-color:#777777;padding:1em;border-radius:1em;display:table;text-align:center;margin:auto">
 <img src="https://www.gabrielgambetta.com/img/fpm2-01.png" style="background-color:#777777"/>
-<figcaption aria-hidden="true">네트워크 지연의 결과.</figcaption>
+<figcaption aria-hidden="true"><i>네트워크 지연의 결과.</i></figcaption>
 </figure>
 
 인터넷과 같이 수십~수백 밀리초의 지연이 발생할 수 있는 네트워크 환경에서, 이 방식은 좋은 경우에도 반응성이 낮게 느껴지며, 최악의 경우에는 전혀 플레이가 불가능 할 수 있다.
@@ -51,7 +51,7 @@ This post is a Korean translation of the [*Fast-Paced Multiplayer (Part II): Cli
 
 <figure style="background-color:#777777;padding:1em;border-radius:1em;display:table;text-align:center;margin:auto">
 <img src="https://www.gabrielgambetta.com/img/fpm2-02.png" style="background-color:#777777"/>
-<figcaption aria-hidden="true">네트워크 지연 + 애니메이션.</figcaption>
+<figcaption aria-hidden="true"><i>네트워크 지연 + 애니메이션.</i></figcaption>
 </figure>
 
 월드가 결정론적이므로, 서버에 전송한 입력이 성공적으로 실행될 거라 가정할 수 있다.
@@ -62,7 +62,7 @@ This post is a Korean translation of the [*Fast-Paced Multiplayer (Part II): Cli
 
 <figure style="background-color:#777777;padding:1em;border-radius:1em;display:table;text-align:center;margin:auto">
 <img src="https://www.gabrielgambetta.com/img/fpm2-03.png" style="background-color:#777777"/>
-<figcaption aria-hidden="true">서버가 행동을 확인하는 동안 애니메이션이 재생된다.</figcaption>
+<figcaption aria-hidden="true"><i>서버가 행동을 확인하는 동안 애니메이션이 재생된다.</i></figcaption>
 </figure>
 
 이제 플레이어의 행동과 화면상 결과 사이에 지연이 전혀 없으면서, 서버는 여전히 authoritative하다.
@@ -80,7 +80,7 @@ This post is a Korean translation of the [*Fast-Paced Multiplayer (Part II): Cli
 
 <figure style="background-color:#777777;padding:1em;border-radius:1em;display:table;text-align:center;margin:auto">
 <img src="https://www.gabrielgambetta.com/img/fpm2-04.png" style="background-color:#777777"/>
-<figcaption aria-hidden="true">예측한 상태와 authoritative<sub>권위 있는</sub> 상태 간 불일치.</figcaption>
+<figcaption aria-hidden="true"><i>예측한 상태와 authoritative<sub>권위 있는</sub> 상태 간 불일치.</i></figcaption>
 </figure>
 
 새로운 게임 상태가 도착한 **t = 250 ms** 시점에, 흥미로운 문제가 발생했다.
@@ -104,7 +104,7 @@ This post is a Korean translation of the [*Fast-Paced Multiplayer (Part II): Cli
 
 <figure style="background-color:#777777;padding:1em;border-radius:1em;display:table;text-align:center;margin:auto">
 <img src="https://www.gabrielgambetta.com/img/fpm2-05.png" style="background-color:#777777"/>
-<figcaption aria-hidden="true">클라이언트 측 예측 + server reconciliation<sub>서버 조율</sub>.</figcaption>
+<figcaption aria-hidden="true"><i>클라이언트 측 예측 + server reconciliation<sub>서버 조율</sub>.</i></figcaption>
 </figure>
 
 이제, **t = 250** 시점에, 서버가 **"네 요청 #1 까지 본 결과, 네 위치는 x = 11"**이라고 말한 것이 된다.
