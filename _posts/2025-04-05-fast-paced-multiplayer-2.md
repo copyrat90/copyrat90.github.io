@@ -3,7 +3,7 @@ layout: post
 title: Fast-Paced Multiplayer (Part II) - Client-Side Prediction and Server Reconciliation
 tags: [Netcode]
 author: Gabriel Gambetta
-last_modified_at: 2025-04-05T18:29:00+09:00
+last_modified_at: 2025-04-05T21:38:00+09:00
 ---
 
 본 포스트는 [Gabriel Gambetta의 *Fast-Paced Multiplayer (Part II): Client-Side Prediction and Server Reconciliation*](https://www.gabrielgambetta.com/client-side-prediction-server-reconciliation.html)를 한국어로 번역한 것입니다.\
@@ -80,7 +80,7 @@ This post is a Korean translation of the [*Fast-Paced Multiplayer (Part II): Cli
 
 <figure style="background-color:#777777;padding:1em;border-radius:1em;display:table;text-align:center;margin:auto">
 <img src="https://www.gabrielgambetta.com/img/fpm2-04.png" style="background-color:#777777"/>
-<figcaption aria-hidden="true"><i>예측한 상태와 authoritative<sub>권위 있는</sub> 상태 간 불일치.</i></figcaption>
+<figcaption aria-hidden="true"><i>예측한 상태와 authoritative<sub>승인된</sub> 상태 간 불일치.</i></figcaption>
 </figure>
 
 새로운 게임 상태가 도착한 **t = 250 ms** 시점에, 흥미로운 문제가 발생했다.

@@ -3,7 +3,7 @@ layout: post
 title: Fast-Paced Multiplayer (Part III) - Entity Interpolation
 tags: [Netcode]
 author: Gabriel Gambetta
-last_modified_at: 2025-04-05T21:34:00+09:00
+last_modified_at: 2025-04-05T21:38:00+09:00
 ---
 
 본 포스트는 [Gabriel Gambetta의 *Fast-Paced Multiplayer (Part III): Entity Interpolation*](https://www.gabrielgambetta.com/entity-interpolation.html)를 한국어로 번역한 것입니다.\
@@ -73,7 +73,7 @@ This post is a Korean translation of the [*Fast-Paced Multiplayer (Part III): En
 다른 말로 하면, 레이싱 카는 한 순간에 180° 회전을 할 수 없다.
 
 이 사실을 100 ms 마다 업데이트를 보내는 서버와의 통신에서 어떻게 이용할 수 있을까?
-클라이언트는 각 상대 차량에 대한 권위 있는<sub>authoritative</sub> 속력과 방향<sub>heading</sub> 정보를 받는다.
+클라이언트는 각 상대 차량에 대한 승인된<sub>authoritative</sub> 속력과 방향<sub>heading</sub> 정보를 받는다.
 다음 100 ms 동안은 새로운 정보를 받을 수 없지만, 여전히 화면에는 다른 차들이 달리는 모습을 보여줘야 한다.
 가장 간단한 방법은 차의 방향과 가속이 그 100 ms 동안 일정할 것이라 가정하고, 그 차의 물리를 로컬에서 연산하는 것이다.
 그 후, 100 ms 가 지나 서버의 업데이트가 도착하면, 차의 위치가 조정된다<sub>corrected</sub>.
@@ -93,10 +93,10 @@ Dead reckoning<sub>추측 항법</sub>은 전함과 같은 느린 속력의 상�
 이는 dead reckoning을 본질적으로 쓸모 없게 만든다.
 새로운 위치와 속력이 이전 데이터로부터 예측될 수 없기 때문이다.
 
-서버가 권위적인<sub>authoritative</sub> 데이터를 보낼 때에만 플레이어 위치를 업데이트 할 수는 없다.
+서버가 승인된<sub>authoritative</sub> 데이터를 보낼 때에만 플레이어 위치를 업데이트 할 수는 없다.
 그렇게 되면 플레이어들이 100 ms 마다 짧은 거리를 순간이동하게 되고, 그래서는 게임을 플레이 할 수가 없다.
 
-우리가 가진 것은 매 100 ms 마다 받는 권위적인<sub>authoritative</sub> 위치 데이터이다.
+우리가 가진 것은 매 100 ms 마다 받는 승인된<sub>authoritative</sub> 위치 데이터이다.
 비결<sub>trick</sub>은 플레이어에게 그 중간에 일어나는 일을 어떻게 보여주느냐다.
 해결책의 핵심은 유저의 플레이어의 비해 다른 플레이어들은 *과거의 모습으로* 보여주는 것이다.
 
