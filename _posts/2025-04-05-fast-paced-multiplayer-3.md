@@ -3,7 +3,7 @@ layout: post
 title: Fast-Paced Multiplayer (Part III) - Entity Interpolation
 tags: [Netcode]
 author: Gabriel Gambetta
-last_modified_at: 2025-04-05T21:38:00+09:00
+last_modified_at: 2025-04-06T09:12:00+09:00
 ---
 
 본 포스트는 [Gabriel Gambetta의 *Fast-Paced Multiplayer (Part III): Entity Interpolation*](https://www.gabrielgambetta.com/entity-interpolation.html)를 한국어로 번역한 것입니다.\
@@ -13,7 +13,7 @@ This post is a Korean translation of the [*Fast-Paced Multiplayer (Part III): En
 1. [Client-Server Game Architecture](/2025/04/05/fast-paced-multiplayer-1)
 2. [Client-Side Prediction and Server Reconciliation](/2025/04/05/fast-paced-multiplayer-2)
 3. Entity Interpolation (현재 글)
-4. [Lag Compensation](/2025/04/05/fast-paced-multiplayer-4)
+4. [Lag Compensation](/2025/04/06/fast-paced-multiplayer-4)
 5. [Live Demo](https://www.gabrielgambetta.com/client-side-prediction-live-demo.html)
 
 # Introduction
@@ -149,6 +149,6 @@ Dead reckoning<sub>추측 항법</sub>은 전함과 같은 느린 속력의 상�
 클라이언트 2에서 렌더링하는 클라이언트 1의 위치는, 서버에서의 위치와도, 클라이언트 1에서의 위치와도 맞지 않으며, 헤드샷을 불가능하게 만든다!
 헤드샷이 없으면 성립하는 게임은 없으므로, 다음 글에서 이 문제를 다뤄보도록 하겠다.
 
-[<< Part II: Client-Side Prediction and Server Reconciliation](/2025/04/05/fast-paced-multiplayer-2) · **[Part IV: Lag Compensation >>](/2025/04/05/fast-paced-multiplayer-4)**
+[<< Part II: Client-Side Prediction and Server Reconciliation](/2025/04/05/fast-paced-multiplayer-2) · **[Part IV: Lag Compensation >>](/2025/04/06/fast-paced-multiplayer-4)**
 
 *마지막 수정 : {{ page.last_modified_at }}*

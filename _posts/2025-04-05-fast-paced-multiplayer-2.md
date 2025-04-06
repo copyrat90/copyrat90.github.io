@@ -3,7 +3,7 @@ layout: post
 title: Fast-Paced Multiplayer (Part II) - Client-Side Prediction and Server Reconciliation
 tags: [Netcode]
 author: Gabriel Gambetta
-last_modified_at: 2025-04-05T21:38:00+09:00
+last_modified_at: 2025-04-06T09:12:00+09:00
 ---
 
 본 포스트는 [Gabriel Gambetta의 *Fast-Paced Multiplayer (Part II): Client-Side Prediction and Server Reconciliation*](https://www.gabrielgambetta.com/client-side-prediction-server-reconciliation.html)를 한국어로 번역한 것입니다.\
@@ -13,7 +13,7 @@ This post is a Korean translation of the [*Fast-Paced Multiplayer (Part II): Cli
 1. [Client-Server Game Architecture](/2025/04/05/fast-paced-multiplayer-1)
 2. Client-Side Prediction and Server Reconciliation (현재 글)
 3. [Entity Interpolation](/2025/04/05/fast-paced-multiplayer-3)
-4. [Lag Compensation](/2025/04/05/fast-paced-multiplayer-4)
+4. [Lag Compensation](/2025/04/06/fast-paced-multiplayer-4)
 5. [Live Demo](https://www.gabrielgambetta.com/client-side-prediction-live-demo.html)
 
 # Introduction
