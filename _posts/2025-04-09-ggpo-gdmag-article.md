@@ -3,7 +3,7 @@ layout: post
 title: Fight the Lag! The Trick Behind GGPO's Low Latency Netcode (WIP)
 tags: [Netcode]
 author: Tony Cannon
-last_modified_at: 2025-04-10T13:24:00+09:00
+last_modified_at: 2025-04-10T14:06:00+09:00
 ---
 
 본 포스트는 [Tony Cannon의 *Fight the Lag! The Trick Behind GGPO's Low Latency Netcode*](https://drive.google.com/open?id=1cV0fY8e_SC1hIFF5E1rT8XRVRzPjU8W9)를 한국어로 번역한 것입니다.\
@@ -23,8 +23,10 @@ This post is a Korean translation of the [*Fight the Lag! The Trick Behind GGPO'
 
 멀티플레이어 게임에 온라인 지원을 추가하는 제일 흔한 방법은 각 기기에서 시뮬레이션을 돌리되, 각 시뮬레이션이 완전히 똑같은 입력을 받도록 하여 동기화를 유지하는 방법이다.
 
-![](/assets/img/posts/2025-04-09-ggpo-gdmag-article/fig1.svg)
-> 그림 1: 전통적인 프레임 지연<sub>frame-delay</sub> 방식의 네트워크 플레이 구현.
+<figure style=";padding:1em;border-radius:1em;display:table;text-align:center;margin:auto">
+<img src="/assets/img/posts/2025-04-09-ggpo-gdmag-article/fig1.svg" width="802px"/>
+<figcaption aria-hidden="true">그림 1: 전통적인 프레임 지연<sub>frame-delay</sub> 방식의 네트워크 플레이 구현.</figcaption>
+</figure>
 
 시뮬레이션이 오로지 입력에 의해서만 결정<sub>determined</sub>된다면, 양쪽 기기에서 같은 입력을 하는 것으로 같은 결과를 재현할 수 있다.
 이 방법은 장점이 많다.
@@ -56,8 +58,10 @@ This post is a Korean translation of the [*Fight the Lag! The Trick Behind GGPO'
 GGPO는 로컬 플레이어가 느끼는<sub>perceived</sub> 입력 지연을 추측 기반 실행<sub>speculative execution</sub>을 이용해 제거한다.
 플레이어의 시뮬레이션 프레임을 실행하기 전에 모든 입력이 도착하기를 기다리는 대신, GGPO는 기존 행동을 토대로 원격 플레이어가 무엇을 할지를 예측한다.
 
-![](/assets/img/posts/2025-04-09-ggpo-gdmag-article/fig2.svg)
-> 그림 2: GGPO의 예측 메커니즘 뜯어보기
+<figure style=";padding:1em;border-radius:1em;display:table;text-align:center;margin:auto">
+<img src="/assets/img/posts/2025-04-09-ggpo-gdmag-article/fig2.svg" width="802px"/>
+<figcaption aria-hidden="true">그림 2: GGPO의 예측 메커니즘 뜯어보기</figcaption>
+</figure>
 
 전통적인 프레임 지연<sub>frame-delay</sub> 방식을 사용했을 때 로컬 플레이어가 느끼는 랙이 위 방법으로 제거된다.
 로컬 플레이어 아바타의 반응성이 오프라인 플레이와 똑같아진다<sub>just as responsive</sub>.
@@ -66,8 +70,10 @@ GGPO는 로컬 플레이어가 느끼는<sub>perceived</sub> 입력 지연을 �
 GGPO가 네트워크에서 원격 입력을 받으면, 예측된 입력과 실제 입력을 비교한다.
 불일치<sub>discrepancy</sub>가 발견되면, GGPO는 시뮬레이션을 최초로 틀린 프레임으로 되감고<sub>rewind back</sub>, 업데이트된 입력 스트림을 토대로 각 플레이어의 입력을 재예측한 후, 새로운 예측을 토대로 현재 프레임까지 시뮬레이션을 진행시킨다.
 
-![](/assets/img/posts/2025-04-09-ggpo-gdmag-article/fig3.svg)
-> 그림 3: GGPO가 동작하는 모습. 1프레임에서의 롤백<sub>rollback</sub>에 유의할 것.
+<figure style=";padding:1em;border-radius:1em;display:table;text-align:center;margin:auto">
+<img src="/assets/img/posts/2025-04-09-ggpo-gdmag-article/fig3.svg" width="826px"/>
+<figcaption aria-hidden="true">그림 3: GGPO가 동작하는 모습. 1프레임에서의 롤백<sub>rollback</sub>에 유의할 것.</figcaption>
+</figure>
 
 # Hiding the lag
 
@@ -100,8 +106,10 @@ GGPO에서는, 로컬 플레이어의 행동은 항상 즉각적으로 적용되
 
 *스트리트 파이터*의 공격 대부분은 3단계<sub>phases</sub>로 이루어진다: 선딜<sub>start-up</sub>, 공격<sub>execution</sub>, 그리고 후딜<sub>recovery</sub>이 그것이다.
 
-![](/assets/img/posts/2025-04-09-ggpo-gdmag-article/fig4.svg)
-> 그림 4: 대부분의 광대역<sub>broadband</sub> 연결에서, GGPO는 스트리트 파이터 기술의 랙을 선딜 단계<sub>start-up phase</sub>에 숨길<sub>mask</sub> 수 있다.
+<figure style=";padding:1em;border-radius:1em;display:table;text-align:center;margin:auto">
+<img src="/assets/img/posts/2025-04-09-ggpo-gdmag-article/fig4.svg" width="852px"/>
+<figcaption aria-hidden="true">그림 4: 대부분의 광대역<sub>broadband</sub> 연결에서, GGPO는 스트리트 파이터 기술의 랙을 선딜 단계<sub>start-up phase</sub>에 숨길<sub>mask</sub> 수 있다.</figcaption>
+</figure>
 
 기술의 선딜<sub>start-up</sub>은 유저가 버튼을 누른 후 실제 공격 판정이 생기기까지 걸리는 시간을 말한다.
 선딜<sub>start-up</sub> 단계에서도 보통 애니메이션은 있지만, 기술이 실제로 데미지를 입히지는 않는다.
@@ -120,16 +128,20 @@ GGPO에서는, 로컬 플레이어의 행동은 항상 즉각적으로 적용되
 사실, GGPO의 테크닉이 세계를 잇는 광대역 연결에서의 지연까지도 잘 커버한다는<sub>scale well up to</sub> 실사례 증거<sub>anecdotal evidence</sub>도 있다.
 **그림 5**를 보면 [GGPO.net](https://www.ggpo.net/) 운영 당시 전형적이었던 저녁 시간대 테스트 서버 활동량 시각화 이미지<sub>snapshot</sub>를 볼 수 있다.
 
-![](/assets/img/posts/2025-04-09-ggpo-gdmag-article/fig5.svg)
-> 그림 5: [GGPO.net](https://www.ggpo.net/) 테스트 서버 활동량 시각화 이미지. 보다시피, 대륙간 플레이도 문제가 되지 않았었다.
+<figure style=";padding:1em;border-radius:1em;display:table;text-align:center;margin:auto">
+<img src="/assets/img/posts/2025-04-09-ggpo-gdmag-article/fig5.svg" width="852px"/>
+<figcaption aria-hidden="true">그림 5: <a href="https://www.ggpo.net/">GGPO.net</a> 테스트 서버 활동량 시각화 이미지. 보다시피, 대륙간 플레이도 문제가 되지 않았었다.</figcaption>
+</figure>
 
 # Integrating GGPO
 
 GGPO는 개발자가 네트워크 세부 사항으로부터 최대한 격리될 수 있도록 작성되었다.
 **그림 6**은 아케이드 게임에서의 단순화된 게임 루프를 표현한 것이다.
 
-![](/assets/img/posts/2025-04-09-ggpo-gdmag-article/fig6.svg)
-> 그림 6: 전형적인 아케이드 게임 루프.
+<figure style=";padding:1em;border-radius:1em;display:table;text-align:center;margin:auto">
+<img src="/assets/img/posts/2025-04-09-ggpo-gdmag-article/fig6.svg" width="306px"/>
+<figcaption aria-hidden="true">그림 6: 전형적인 아케이드 게임 루프.</figcaption>
+</figure>
 
 게임 루프는 컨트롤러로부터 샘플링<sub>samples</sub>을 수행해 다음 게임 시뮬레이션 상태에 사용할 입력을 생성한다.
 그 입력은 시뮬레이션 엔진으로 전달돼 게임을 다음 프레임으로 업데이트하고 각 시뮬레이션 단계의 결과를 렌더링<sub>render</sub>한다.
@@ -138,8 +150,10 @@ GGPO는 개발자가 네트워크 세부 사항으로부터 최대한 격리될 
 예를 들어, 어떤 게임은 컨트롤러 샘플링과 게임 업데이트를 30hz로 수행하지만, 최근 2개의 게임 상태를 보간<sub>interpolating</sub>하여 120hz로 렌더링될 수 있다.
 GGPO는 이런 상황에서도 마찬가지로 적용할 수 있다.
 
-![](/assets/img/posts/2025-04-09-ggpo-gdmag-article/fig7.svg)
-> 그림 7: GGPO를 쓰는 아케이드 게임 루프. GGPO와 통합하기 위해 추가/수정된 단계는 회색 블록으로 표현하였다.
+<figure style=";padding:1em;border-radius:1em;display:table;text-align:center;margin:auto">
+<img src="/assets/img/posts/2025-04-09-ggpo-gdmag-article/fig7.svg" width="639px"/>
+<figcaption aria-hidden="true">그림 7: GGPO를 쓰는 아케이드 게임 루프. GGPO와 통합하기 위해 추가/수정된 단계는 회색 블록으로 표현하였다.</figcaption>
+</figure>
 
 **그림 7**은 GGPO를 통합<sub>incorporate</sub>하기 위해 변형된 게임 루프를 보여준다.
 컨트롤러에서 샘플링을 수행한 다음, 개발자는 그 입력을 `ggpo_synchronize_inputs` 함수를 통해 GGPO에 전달해야 한다.
