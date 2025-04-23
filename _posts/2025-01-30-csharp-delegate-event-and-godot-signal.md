@@ -3,7 +3,7 @@ layout: post
 title: C#의 `delegate`와 `event`, 그리고 Godot의 Signal
 tags: [C#, Godot]
 author: copyrat90
-last_modified_at: 2025-03-23T13:04:00+09:00
+last_modified_at: 2025-04-23T15:02:00+09:00
 ---
 
 C#에서 Observer pattern을 구현하는 방법과, Godot에서 그걸 활용해 Signal handling하는 방법.
@@ -265,6 +265,9 @@ Godot의 Signal을 받을 때는 [`Godot.SignalAwaiter`](https://haxegodot.githu
 반면, 고도 엔진에서는 기본적으로 게임 루프를 돌리는 main thread가 Signal emission도 담당하는 것으로 보인다.\
 이 말은, main thread에서 Signal을 발생시켰다면 `await ToSignal(..)`로 **대기가 끝난 이후에도 같은 thread라서 동기화가 필요없다는 말이다.**\
 그래서 인터넷에 도는 예제들 대부분이 `await`을 해 놓고도 별도의 동기화를 사용하지 않는 것으로 생각된다.
+
+(25.04.23. 추가) 고도 엔진에서는 `TaskAwaiter`를 `await`하는 경우라고 해도,\
+[`GodotSynchronizationContext`](https://github.com/godotengine/godot/blob/master/modules/mono/glue/GodotSharp/GodotSharp/Core/GodotSynchronizationContext.cs)에 Task의 continuation이 등록되기 때문에, `await` 전후가 같은 main thread라서 동기화가 필요없다. ([godotengine/godot#18849](https://github.com/godotengine/godot/issues/18849))
 
 # Lapsed listener problem
 
