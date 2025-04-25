@@ -3,7 +3,7 @@ layout: post
 title: (C#) async-await 패턴에 사용할 custom awaitable 작성하기
 tags: [C#]
 author: copyrat90
-last_modified_at: 2025-03-23T15:26:00+09:00
+last_modified_at: 2025-04-25T12:41:00+09:00
 ---
 
 C# 에서 async-await 패턴의 작동 방식과, 그를 이용한 custom awaitable 작성하기.
@@ -80,6 +80,7 @@ else
 [`Task.GetAwaiter()`](https://learn.microsoft.com/en-us/dotnet/api/system.threading.tasks.task.getawaiter?view=net-9.0)는 [`TaskAwaiter`](https://learn.microsoft.com/en-us/dotnet/api/system.runtime.compilerservices.taskawaiter?view=net-9.0)를 반환하며, 이는 위 awaiter의 조건들을 만족한다.
 
 작업이 완료되면, C# 런타임의 [`ThreadPool`](https://learn.microsoft.com/en-us/dotnet/api/system.threading.threadpool?view=net-9.0) 내의 thread가 `continuation`을 호출해 후속 method 코드를 재개한다.\
+(정확히는, `SynchronizationContext.Current`가 기본값 `null`인 경우.)\
 (참고로, Windows에서 장치 I/O를 대기하는 경우에 한정해 [기존에는 IOCP worker thread가 관여했는데](https://blog.stephencleary.com/2013/11/there-is-no-thread.html), .NET 7부터는 [managed thread pool에서 batch polling을 통해 처리한다고 한다.](https://github.com/dotnet/runtime/issues/46610#issuecomment-1109014759))
 
 ## 예시 2. GodotSharp의 `SignalAwaiter`
@@ -152,7 +153,7 @@ public void SetResultFrom(HSteamPipe pipe, ref SteamAPICallCompleted_t callCompl
     {
         Monitor.Enter(this.taskLock, ref lockTaken);
 
-        // Get the call result param directly into `result`
+        // P/Invoke 매개변수로 `this.result`의 Span을 전달하여, Steam CallResult param을 추가적인 복사 없이 바로 받아오기
         Span<byte> resultRaw = MemoryMarshal.AsBytes(MemoryMarshal.CreateSpan(ref this.result, 1));
         bool gotResult = Native.SteamAPI_ManualDispatch_GetAPICallResult(pipe, callCompleted.AsyncCall, resultRaw, resultRaw.Length, callCompleted.AsyncCallbackId, out this.isFailed);
         Debug.Assert(gotResult, "There was no call result available");
@@ -165,7 +166,17 @@ public void SetResultFrom(HSteamPipe pipe, ref SteamAPICallCompleted_t callCompl
             Monitor.Exit(this.taskLock);
             lockTaken = false;
 
-            this.continuation();
+            // `CallTask` 생성 당시 thread에 `SynchronizationContext.Current`가 존재했다면
+            if (this.syncContext != null)
+            {
+                // 해당 synchronization context에 continuation을 재개하도록 예약
+                this.syncContext.Post(cont => ((Action)cont!).Invoke(), this.continuation);
+            }
+            else
+            {
+                // 현재 thread에서 바로 continuation 재개
+                this.continuation();
+            }
         }
     }
     finally
@@ -183,7 +194,10 @@ public void SetResultFrom(HSteamPipe pipe, ref SteamAPICallCompleted_t callCompl
 (이게 어떻게 pinning 되어 P/Invoke 호출이 되는지는 [이전 글](/2025/02/17/nullptr-ref-out-for-interop#설명)에서 설명한 바 있다.)
 
 만일, 이미 `this.continuation`이 등록된 상황이었다면, 재개를 해준다.\
-그렇지 않다면 할 일은 없다. `this.isCompleted = true;`로 세팅했으므로, `await` 한 측에서 재개할 것이다.
+이 때, `await` 한 측 thread에 `SynchronizationContext.Current`가 존재했다면, 그 synchronization context에서 재개하도록 예약하고,\
+존재하지 않았다면, 현재 `SetResultFrom()`을 수행 중인 thread에서 바로 재개한다.
+
+반대로, `this.continuation`이 등록되지 않았다면 할 일은 없다. `this.isCompleted = true;`로 세팅했으므로, `await` 한 측에서 재개할 것이다.
 
 ## 사족: `SteamAPICall_t`로 `CallTask<T>` 찾기
 
@@ -339,5 +353,7 @@ async Task ReadSpacewarCloudFileAsync()
 * [Stephen Toub - await anything;](https://devblogs.microsoft.com/dotnet/await-anything/)
 * [JacksonDunstan.com - How Async and Await Work](https://www.jacksondunstan.com/articles/4918)
 * [Vasil Kosturski - Exploring the async/await State Machine – The Awaitable Pattern](https://vkontech.com/exploring-the-async-await-state-machine-the-awaitable-pattern/)
+* [Václav Dajbych - How to Write a Custom Awaitable Method](https://www.dajbych.net/en/blog/how-to-write-a-custom-awaitable-method)
+* [Stephen Cleary - It's All About the SynchronizationContext](https://learn.microsoft.com/en-us/archive/msdn-magazine/2011/february/msdn-magazine-parallel-computing-it-s-all-about-the-synchronizationcontext)
 
 *마지막 수정 : {{ page.last_modified_at }}*
