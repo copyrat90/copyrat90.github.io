@@ -3,7 +3,7 @@ layout: post
 title: (C#) async-await 패턴에 사용할 custom awaitable 작성하기
 tags: [C#]
 author: copyrat90
-last_modified_at: 2025-04-25T12:41:00+09:00
+last_modified_at: 2025-05-03T14:38:00+09:00
 ---
 
 C# 에서 async-await 패턴의 작동 방식과, 그를 이용한 custom awaitable 작성하기.
@@ -122,6 +122,9 @@ public void OnCompleted(Action continuation)
             // 결과가 없었으면, 차후에 `RunCallbacks()` 돌리는 thread가 호출하도록
             // `continuation`을 내부에 저장해 둠
             this.continuation = continuation;
+
+            // `continuation`을 재개할 현재 thread의 SynchronizationContext를 저장해 둠
+            this.syncContext = SynchronizationContext.Current;
         }
     }
     finally
@@ -166,8 +169,8 @@ public void SetResultFrom(HSteamPipe pipe, ref SteamAPICallCompleted_t callCompl
             Monitor.Exit(this.taskLock);
             lockTaken = false;
 
-            // `CallTask` 생성 당시 thread에 `SynchronizationContext.Current`가 존재했다면
-            if (this.syncContext != null)
+            // `CallTask`를 await한 thread에 `SynchronizationContext.Current`가 존재했고, `ConfigureAwait(true)` 상태였다면
+            if (this.continueOnCapturedContext && this.syncContext != null)
             {
                 // 해당 synchronization context에 continuation을 재개하도록 예약
                 this.syncContext.Post(cont => ((Action)cont!).Invoke(), this.continuation);
@@ -194,7 +197,8 @@ public void SetResultFrom(HSteamPipe pipe, ref SteamAPICallCompleted_t callCompl
 (이게 어떻게 pinning 되어 P/Invoke 호출이 되는지는 [이전 글](/2025/02/17/nullptr-ref-out-for-interop#설명)에서 설명한 바 있다.)
 
 만일, 이미 `this.continuation`이 등록된 상황이었다면, 재개를 해준다.\
-이 때, `await` 한 측 thread에 `SynchronizationContext.Current`가 존재했다면, 그 synchronization context에서 재개하도록 예약하고,\
+이 때, `await` 한 측 thread에 `SynchronizationContext.Current`가 존재했고, `ConfigureAwait(true)` 상태였다면 (기본값),
+그 synchronization context에서 재개하도록 예약하고,\
 존재하지 않았다면, 현재 `SetResultFrom()`을 수행 중인 thread에서 바로 재개한다.
 
 반대로, `this.continuation`이 등록되지 않았다면 할 일은 없다. `this.isCompleted = true;`로 세팅했으므로, `await` 한 측에서 재개할 것이다.
