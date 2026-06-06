@@ -3,7 +3,7 @@ layout: post
 title: 99%가 잘못 쓰는 placement new
 tags: [C++]
 author: copyrat90
-last_modified_at: 2025-03-17T14:54:00+09:00
+last_modified_at: 2026-06-06T19:15:00+09:00
 ---
 
 제목 어그로를 좀 끌어봤는데, 이만큼 직관적이면서 어그로 없는 제목이 안 떠오르는 걸 어쩌겠는가.\
@@ -275,7 +275,7 @@ int main() {
 
     // 생성된 적도 없는 `data_storage` 위치에서 소멸을 한다.
     // 소멸자 정의에 따라 온갖 undefined behavior를 야기할 수 있다.
-    reinterpret_cast<MyData*>(data_storage)->~MyData();
+    std::launder(reinterpret_cast<MyData*>(data_storage))->~MyData();
 }
 ```
 
@@ -325,7 +325,7 @@ MyData()
 
 ### 4. global scope resolution operator를 빼먹기
 
-마지막으로 할 수 있는 실수는 `new` 앞에 `::`를 빼먹는 경우이다.
+그 다음으로 할 수 있는 실수는 `new` 앞에 `::`를 빼먹는 경우이다.
 
 ```cpp
 alignas(MyData) char data_storage[sizeof(MyData)];
@@ -360,7 +360,7 @@ int main() {
     // 불평한다.
     new (static_cast<void*>(data_storage)) MyData;
 
-    reinterpret_cast<MyData*>(data_storage)->~MyData();
+    std::launder(reinterpret_cast<MyData*>(data_storage))->~MyData();
 }
 ```
 
@@ -388,6 +388,42 @@ Code Examples -> Example 1 을 보면, 예제로 만든 외부 클래스 `Test1`
 그리고 저 프로젝트 코드의 `bn::pool<T, MaxSize>::create()` 내부 placement new가 global scope resolution operator를 빼먹어서, `bn::pool<Test1, 3>::create()` 호출 시에 컴파일 오류가 난 걸 볼 수 있다.\
 (참고로 지금은 문제가 수정되었다.)
 
+
+### 5. `std::launder()` 빼먹기
+
+상황에 따라 placement new 에서 반환된 포인터를 저장하지 않고, 바이트 버퍼를 `reinterpret_cast`해서 포인터를 다시 얻어야 할 수 있는데,\
+이 때 [`std::launder()`](https://en.cppreference.com/cpp/utility/launder)를 빼먹어도 UB이다.
+
+```cpp
+#include <cstddef>
+#include <iostream>
+#include <new>
+
+struct MyData {
+    const int data;
+};
+
+int main() {
+    alignas(MyData) char data_storage[sizeof(MyData)];
+
+    MyData* first_ptr = ::new (static_cast<void*>(data_storage)) MyData(333);
+    std::launder(reinterpret_cast<MyData*>(data_storage))->~MyData();
+
+    MyData* second_ptr = ::new (static_cast<void*>(data_storage)) MyData(444);
+
+    // 이전 포인터인 `first_ptr`로부터 `MyData` 객체를 참조하려면 `std::launder()`로 감싸야 한다.
+    // `result` 값은 `444`일 수도 있고, constant propagation 최적화로 인해 `333`일 수도 있다.
+    int result = first_ptr->data;
+
+    std::launder(reinterpret_cast<MyData*>(data_storage))->~MyData();
+}
+```
+
+이건 정말로 문제를 보기 쉽지 않지만, 컴파일러가 최적화를 수행할 때 잘못된 가정을 내리게 만드는 결과를 가져올 수 있다.
+
+대표적으로 위처럼 const 멤버를 가진 경우, constant propagation 최적화로 인해 이전 포인터로는 변경 전 값을 가져오는 불상사가 발생할 수 있다.
+
+
 ## 결론
 
 한마디로 요약하면 이렇게 쓰면 된다.
@@ -398,6 +434,7 @@ alignas(MyData) char data_storage[sizeof(MyData)];
 // `::`와 `void*` 캐스팅 잊지 말기
 MyData* ptr = ::new (static_cast<void*>(data_storage)) MyData;
 // 소멸자 호출 잊지 말기
+// (`ptr` 대신 `reinterpret_cast<MyData*>(data_storage)`를 쓴다면 역참조 전에 `std::launder()`로 감쌀 것)
 ptr->~MyData();
 ```
 
@@ -422,5 +459,7 @@ std::destroy_at(ptr);
 
 * [Stackoverflow - Using placement new in generic programming](https://stackoverflow.com/a/57539415/12875525)
 * [Stackoverflow - Why isn't there a std::construct_at in C++17?](https://stackoverflow.com/a/52971541/12875525)
+* [Naver D2 - C++ 객체 수명과 암묵적 객체 생성](https://d2.naver.com/helloworld/7997284)
+    * <https://eel.is/c++draft/basic.life#10>
 
 *마지막 수정 : {{ page.last_modified_at }}*
